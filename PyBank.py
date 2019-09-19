@@ -1,57 +1,67 @@
-import os
 import csv
+import os
 
-pybank_csv = os.path.join("..", "03-Python_homework_PyBank_Resources_budget_data.csv")
+pybank_csv = os.path.join("..", "Homework-Solutions_03-Python_Solutions_PyBank_Resources_budget_data.csv")
+file_output = os.path.join("budget_analysis.txt")
 
-months = []
-profit = []
-avg = []
-change = []
-prev = 0
+# Define variables 
+total_months = 0
+months_of_change = []
+net_change_list = []
+greatest_increase = ["", 0]
+greatest_decrease = ["", 999999999999999]
+total_net = 0
 
-csvfile = open(pybank_csv, 'r')
-textfile = open("PyBank.txt", "w")
+# Read the csv and convert it into a list of dictionaries
+
+with open(pybank_csv) as financial_data:
+    reader = csv.reader(financial_data)
+
+    # Read the header row
+    header = next(reader)
+
+    # Extract first row to avoid appending to net_change_list
+    first_row = next(reader)
+    total_months = total_months + 1
+    total_net = total_net + int(first_row[1])
+    prev_net = int(first_row[1])
+
+    for row in reader:
+
+        # Track the total
+        total_months = total_months + 1
+        total_net = total_net + int(first_row[1])
+
+        # Track the net change
+        net_change = int(row[1]) - prev_net
+        prev_net = int(row[1])
+        net_change_list = net_change_list + [net_change]
+        months_of_change = months_of_change + [row[0]]
+
+        # Calculate the greatest increase
+        if net_change > greatest_increase[1]:
+            greatest_increase[0] = row[0]
+            greatest_increase[1] = net_change
+
+        # Calculate the greatest decrease
+        if net_change < greatest_decrease[1]:
+            greatest_decrease[0] = row[0]
+            greatest_decrease[1] = net_change
+
+# Calculate the Average Net Change
+net_monthly_avg = sum(net_change_list)/ len(net_change_list)
 
 
-csvreader = csv.reader(csvfile, delimiter=",")
-header = next(csvreader)
-for row in csvreader:
-    months.append(row[0])
-    profit.append(int(row[1]))
-    curr = int(row[1])
-    val1 = curr - prev
-    change.append(val1)
-    prev = curr
+output = (
+    f"\nFinancial Analysis\n"
+    f"---------------------------\n"
+    f"Total Months: {total_months}\n"
+    f"Total: ${total_net:,.2f}\n"
+    f"Average Change: ${net_monthly_avg:,.2f}\n"
+    f"Greatest Increase in Profits: {greatest_increase[0]} (${greatest_increase[1]:,.2f})\n"
+    f"Greatest Decrease in Profits: {greatest_decrease[0]} (${greatest_decrease[1]:,.2f})")
 
-avg_change = round(sum(change[1:])/len(change[1:]), 2)
+print(output)
 
-date_len = len(months)
-net_total = sum(profit)
-
-height = max(profit)
-floor = min(profit)
-max_index = profit.index(height)
-min_index = profit.index(floor)
-max_month = months[max_index]
-min_month = months[min_index]
-
-print("Financial Analysis")
-print("----------------------------")
-print(f"Total Months: {date_len}")
-print(f"Total: ${net_total}")
-print(f"Average Change: ${avg_change}")
-print(f"Greatest Increase in Profits: {max_month} (${height})")
-print(f"Greatest Decrease in Profits: {min_month} (${floor})")
-
-out_put = os.path.join("PyBank.txt")
-
-textfile.write("Financial Analysis\n")
-textfile.write("----------------------------\n")
-textfile.write(f"Total Months: {date_len}\n")
-textfile.write(f"Total: ${net_total}\n")
-textfile.write(f"Average Change: ${avg_change}\n")
-textfile.write(f"Greatest Increase in Profits: {max_month}:(${height})\n")
-textfile.write(f"Greatest Decrease in Profits: {min_month} (${floor})\n")
-
-csvfile.close()
-textfile.close()
+with open(file_output, "w") as txt_file:
+    txt_file.write(output)
